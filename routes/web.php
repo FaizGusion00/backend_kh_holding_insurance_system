@@ -12,7 +12,7 @@ use App\Http\Controllers\AdminCommissionController;
 use App\Http\Controllers\AdminWithdrawalController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.login');
 });
 
 // Include test routes
