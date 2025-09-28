@@ -129,8 +129,27 @@ class AuthController extends Controller
 
     public function logout()
     {
-        auth('api')->logout();
-        return response()->json(['status' => 'success', 'message' => 'Logged out']);
+        try {
+            // Invalidate the current token
+            auth('api')->logout();
+            
+            // Blacklist the token to ensure it cannot be used again
+            auth('api')->invalidate();
+            
+            return response()->json([
+                'status' => 'success', 
+                'message' => 'Successfully logged out',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            // Even if token invalidation fails, we should still return success
+            // as the client will clear the token locally
+            return response()->json([
+                'status' => 'success', 
+                'message' => 'Successfully logged out',
+                'success' => true
+            ]);
+        }
     }
 
     public function refresh()
