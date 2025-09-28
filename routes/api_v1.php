@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('api/v1')->group(function () {
+    // Public routes (no authentication required)
+    Route::post('/validate-agent-code', [\App\Http\Controllers\AuthController::class, 'validateAgentCode']);
+    
     // Auth
     Route::post('/auth/register', [\App\Http\Controllers\AuthController::class, 'register']);
     Route::post('/auth/login', [\App\Http\Controllers\AuthController::class, 'login']);

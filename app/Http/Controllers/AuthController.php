@@ -248,6 +248,42 @@ class AuthController extends Controller
         
         return response()->json(['status' => 'success', 'data' => ['user' => $user]]);
     }
+
+    /**
+     * Validate agent code for external registration
+     */
+    public function validateAgentCode(Request $request)
+    {
+        $data = $request->validate([
+            'agent_code' => 'required|string|max:10',
+        ]);
+
+        $agentCode = $data['agent_code'];
+        
+        // Check if agent code exists and is active
+        $user = User::where('agent_code', $agentCode)
+                   ->where('is_active', true)
+                   ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Invalid or inactive agent code. Please check your registration link.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'success' => true,
+            'message' => 'Agent code is valid',
+            'data' => [
+                'agent_code' => $agentCode,
+                'agent_name' => $user->name,
+                'is_valid' => true
+            ]
+        ]);
+    }
 }
 
 
