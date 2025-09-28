@@ -148,6 +148,18 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(WithdrawalRequest::class);
     }
 
+    // Custom notifications relationship (overrides the Notifiable trait)
+    public function customNotifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
+    // Override the notifications relationship from Notifiable trait
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
     // JWT implementation
     public function getJWTIdentifier()
     {
