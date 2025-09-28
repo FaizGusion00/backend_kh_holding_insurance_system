@@ -260,9 +260,8 @@ class AuthController extends Controller
 
         $agentCode = $data['agent_code'];
         
-        // Check if agent code exists and is active
+        // Check if agent code exists
         $user = User::where('agent_code', $agentCode)
-                   ->where('is_active', true)
                    ->first();
 
         if (!$user) {
