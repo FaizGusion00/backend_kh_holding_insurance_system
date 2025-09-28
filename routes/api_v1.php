@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('api/v1')->group(function () {
+    // Health check endpoint
+    Route::get('/health', [\App\Http\Controllers\HealthController::class, 'check']);
+    
     // Public routes (no authentication required)
     Route::post('/validate-agent-code', [\App\Http\Controllers\AuthController::class, 'validateAgentCode']);
     
