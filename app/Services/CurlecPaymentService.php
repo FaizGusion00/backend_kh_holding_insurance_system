@@ -224,7 +224,7 @@ class CurlecPaymentService
             $user = $payment->user;
             if ($user && empty($user->agent_code)) {
                 $seq = str_pad((string) (\App\Models\User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-                $user->agent_code = 'AGT' . $seq;
+                $user->agent_code = 'KH' . $seq;
                 $user->save();
             }
         } elseif ($status === 'failed') {

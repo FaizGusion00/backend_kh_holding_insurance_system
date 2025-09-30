@@ -631,8 +631,8 @@ class MedicalRegistrationController extends Controller
     private function generateAgentCode(): string
     {
         $sequence = User::whereNotNull('agent_code')->count() + 1;
-        // Enforce 5-digit suffix (AGT00001)
-        return 'AGT' . str_pad($sequence, 5, '0', STR_PAD_LEFT);
+        // Enforce 5-digit suffix (KH00001)
+        return 'KH' . str_pad($sequence, 5, '0', STR_PAD_LEFT);
     }
 
     /**

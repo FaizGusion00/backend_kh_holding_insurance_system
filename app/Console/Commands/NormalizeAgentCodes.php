@@ -9,7 +9,7 @@ class NormalizeAgentCodes extends Command
 {
     protected $signature = 'khh:normalize-agent-codes {--dry-run}';
 
-    protected $description = 'Normalize all users\' agent_code to AGT + 5 digits and fix referrer_code references';
+    protected $description = 'Normalize all users\' agent_code to KH + 5 digits and fix referrer_code references';
 
     public function handle(): int
     {
@@ -28,7 +28,7 @@ class NormalizeAgentCodes extends Command
         $seq = 1;
 
         $format = function (int $n): string {
-            return 'AGT'.str_pad((string)$n, 5, '0', STR_PAD_LEFT);
+            return 'KH'.str_pad((string)$n, 5, '0', STR_PAD_LEFT);
         };
 
         foreach ($users as $u) {

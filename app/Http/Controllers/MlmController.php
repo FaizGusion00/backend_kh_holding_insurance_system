@@ -740,7 +740,7 @@ class MlmController extends Controller
     private function generateAgentCode()
     {
         $seq = str_pad((string) (User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-        return 'AGT' . $seq;
+        return 'KH' . $seq;
     }
 
     public function calculatePlanAmount($plan, $paymentMode)

@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
             'emergency_contact_phone' => '0123456790',
             'emergency_contact_relationship' => 'Family',
             'password' => Hash::make('agent123'),
-            'agent_code' => 'AGT00001',
+            'agent_code' => 'KH00001',
             'referrer_code' => null, // Top level agent
             ]
         );
@@ -56,8 +56,8 @@ class UserSeeder extends Seeder
             'emergency_contact_phone' => '0123456792',
             'emergency_contact_relationship' => 'Spouse',
             'password' => Hash::make('agent123'),
-            'agent_code' => 'AGT00002',
-            'referrer_code' => 'AGT00001', // Referred by main agent
+            'agent_code' => 'KH00002',
+            'referrer_code' => 'KH00001', // Referred by main agent
             ]
         );
 
@@ -82,8 +82,8 @@ class UserSeeder extends Seeder
             'emergency_contact_phone' => '0123456794',
             'emergency_contact_relationship' => 'Sibling',
             'password' => Hash::make('agent123'),
-            'agent_code' => 'AGT00003',
-            'referrer_code' => 'AGT00002', // Referred by level 2 agent
+            'agent_code' => 'KH00003',
+            'referrer_code' => 'KH00002', // Referred by level 2 agent
             ]
         );
 
@@ -108,8 +108,8 @@ class UserSeeder extends Seeder
             'emergency_contact_phone' => '0123456796',
             'emergency_contact_relationship' => 'Parent',
             'password' => Hash::make('client123'),
-            'agent_code' => 'AGT00004',
-            'referrer_code' => 'AGT00003', // Referred by level 3 agent
+            'agent_code' => 'KH00004',
+            'referrer_code' => 'KH00003', // Referred by level 3 agent
             ]
         );
 
@@ -134,10 +134,10 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Created 4 users with proper MLM hierarchy:');
-        $this->command->info('1. Main Agent (AGT00001) - Top Level');
-        $this->command->info('2. Level 2 Agent (AGT00002) - Referred by AGT00001');
-        $this->command->info('3. Level 3 Agent (AGT00003) - Referred by AGT00002');
-        $this->command->info('4. Sample Client (AGT00004) - Referred by AGT00003');
+        $this->command->info('1. Main Agent (KH00001) - Top Level');
+        $this->command->info('2. Level 2 Agent (KH00002) - Referred by KH00001');
+        $this->command->info('3. Level 3 Agent (KH00003) - Referred by KH00002');
+        $this->command->info('4. Sample Client (KH00004) - Referred by KH00003');
         $this->command->info('Network levels calculated for all agents!');
     }
 }

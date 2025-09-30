@@ -142,7 +142,7 @@ class PaymentController extends Controller
                 $agent = $payment->user;
                 if ($agent && empty($agent->agent_code)) {
                     $seq = str_pad((string) (User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-                    $updates = ['agent_code' => 'AGT'.$seq];
+                    $updates = ['agent_code' => 'KH'.$seq];
                     if (\Schema::hasColumn('users', 'status')) {
                         $updates['status'] = 'active';
                     }
@@ -193,7 +193,7 @@ class PaymentController extends Controller
     private function generateAgentCode(): string
     {
         $seq = str_pad((string) (User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-        return 'AGT'.$seq;
+        return 'KH'.$seq;
     }
 }
 

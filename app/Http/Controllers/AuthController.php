@@ -25,7 +25,7 @@ class AuthController extends Controller
 
         // Generate agent code
         $seq = str_pad((string) (User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-        $agentCode = 'AGT' . $seq;
+        $agentCode = 'KH' . $seq;
 
             $user = User::create([
                 'name' => $data['name'],
