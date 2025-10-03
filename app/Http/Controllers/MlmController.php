@@ -260,6 +260,124 @@ class MlmController extends Controller
     }
 
     /**
+     * Get downlines for a specific user
+     */
+    public function getUserDownlines(Request $request, $userId)
+    {
+        $user = auth('api')->user();
+        $targetUser = User::find($userId);
+        
+        if (!$targetUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+        
+        $level = $request->get('level');
+        $page = $request->get('page', 1);
+        $perPage = 15;
+        
+        // Get downlines for the target user
+        $downlines = $this->getDownlinesForUser($targetUser->agent_code, $level);
+        
+        // Paginate results
+        $total = $downlines->count();
+        $offset = ($page - 1) * $perPage;
+        $paginatedDownlines = $downlines->slice($offset, $perPage)->values();
+        
+        // Get level breakdown for the target user
+        $levelBreakdown = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $levelBreakdown["level_{$i}"] = $this->getDownlinesCount($targetUser->agent_code, $i);
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'data' => $paginatedDownlines,
+                'by_level_counts' => $levelBreakdown,
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => ceil($total / $perPage)
+            ]
+        ]);
+    }
+
+    /**
+     * Get commission summary for a specific user
+     */
+    public function getUserCommissionSummary($userId)
+    {
+        $user = auth('api')->user();
+        $targetUser = User::find($userId);
+        
+        if (!$targetUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+        
+        $totalEarnedCents = \App\Models\CommissionTransaction::where('earner_user_id', $targetUser->id)
+            ->where('status', 'posted')
+            ->sum('commission_cents');
+            
+        $pendingAmountCents = \App\Models\CommissionTransaction::where('earner_user_id', $targetUser->id)
+            ->where('status', 'pending')
+            ->sum('commission_cents');
+            
+        // Calculate monthly commission (current month)
+        $monthlyCommissionCents = \App\Models\CommissionTransaction::where('earner_user_id', $targetUser->id)
+            ->where('status', 'posted')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('commission_cents');
+            
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'total_earned' => ($totalEarnedCents ?? 0) / 100,
+                'pending_amount' => ($pendingAmountCents ?? 0) / 100,
+                'total_commission' => (($totalEarnedCents ?? 0) + ($pendingAmountCents ?? 0)) / 100,
+                'monthly_commission' => ($monthlyCommissionCents ?? 0) / 100
+            ]
+        ]);
+    }
+
+    /**
+     * Get downlines for a specific user's agent code
+     */
+    private function getDownlinesForUser($agentCode, $level = null)
+    {
+        if (!$agentCode) {
+            return collect();
+        }
+        
+        $levels = $level ? $level : 5;
+        $downlines = $this->getDownlinesRecursive($agentCode, $levels, 1, []);
+        
+        return $downlines->map(function ($user) {
+            return (object) [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'agent_code' => $user->agent_code,
+                'phone_number' => $user->phone_number,
+                'created_at' => $user->created_at,
+                'mlm_level' => $user->mlm_level,
+                'registration_date' => $user->created_at,
+                'status' => $user->status ?? 'active',
+                'active_policies_count' => $user->active_policies_count ?? 0,
+                'total_commission_earned' => $user->total_commission_earned ?? 0,
+                'downline_count' => $user->downline_count ?? 0,
+                'referrer_code' => $user->referrer_code,
+            ];
+        });
+    }
+
+    /**
      * Calculate the correct MLM level for a user based on their position in the referral chain
      */
     private function calculateUserMlmLevel($userId, $rootAgentCode)

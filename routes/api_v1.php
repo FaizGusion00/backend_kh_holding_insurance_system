@@ -41,6 +41,8 @@ Route::prefix('api/v1')->group(function () {
         Route::get('/mlm/referrals', [\App\Http\Controllers\MlmController::class, 'getReferrals']);
         Route::get('/mlm/downlines', [\App\Http\Controllers\MlmController::class, 'getDownlines']);
         Route::get('/mlm/commission-summary', [\App\Http\Controllers\MlmController::class, 'getCommissionSummary']);
+        Route::get('/mlm/user/{userId}/downlines', [\App\Http\Controllers\MlmController::class, 'getUserDownlines']);
+        Route::get('/mlm/user/{userId}/commission-summary', [\App\Http\Controllers\MlmController::class, 'getUserCommissionSummary']);
         Route::get('/mlm/clients', [\App\Http\Controllers\MlmController::class, 'getMedicalClients']);
         Route::get('/mlm/client-policies/{clientId}', [\App\Http\Controllers\MlmController::class, 'getClientPolicies']);
         Route::put('/mlm/policy/{policyId}/status', [\App\Http\Controllers\MlmController::class, 'updatePolicyStatus']);
