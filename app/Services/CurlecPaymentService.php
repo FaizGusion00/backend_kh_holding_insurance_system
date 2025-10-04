@@ -201,7 +201,7 @@ class CurlecPaymentService
             'status_code' => 200,
         ]);
 
-        // Find payment by order ID in notes
+        // Find payment by order ID
         $payment = PaymentTransaction::where('external_ref', $orderId)
             ->orWhere('meta->order_id', $orderId)
             ->first();
@@ -211,25 +211,81 @@ class CurlecPaymentService
             return;
         }
 
-        // Update payment status
+        // Check if payment is already processed to prevent duplicate processing
+        if ($payment->status === 'paid' && $status === 'paid') {
+            Log::info('Payment already processed, skipping duplicate webhook', [
+                'payment_id' => $payment->id,
+                'order_id' => $orderId,
+                'current_status' => $payment->status
+            ]);
+            return;
+        }
+
+        // Update payment status based on webhook status
         if ($status === 'paid') {
-            $payment->status = 'paid';
-            $payment->paid_at = now();
-            $payment->save();
+            // Use database transaction to ensure atomicity
+            \DB::transaction(function () use ($payment) {
+                // Double-check status hasn't changed during transaction
+                $payment->refresh();
+                if ($payment->status === 'paid') {
+                    Log::info('Payment already processed in another request', [
+                        'payment_id' => $payment->id
+                    ]);
+                    return;
+                }
 
-            // Trigger commission disbursement
-            app(CommissionService::class)->disburseForPayment($payment);
+                // Update payment status
+                $payment->status = 'paid';
+                $payment->paid_at = now();
+                $payment->save();
 
-            // Ensure payer has an agent_code after successful first payment
-            $user = $payment->user;
-            if ($user && empty($user->agent_code)) {
-                $seq = str_pad((string) (\App\Models\User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-                $user->agent_code = 'KH' . $seq;
-                $user->save();
-            }
+                // Update the agent who made the payment to have an agent code if they don't have one
+                $agent = $payment->user;
+                if ($agent && empty($agent->agent_code)) {
+                    $seq = str_pad((string) (\App\Models\User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
+                    $updates = ['agent_code' => 'KH' . $seq];
+                    if (\Schema::hasColumn('users', 'status')) {
+                        $updates['status'] = 'active';
+                    }
+                    if (\Schema::hasColumn('users', 'mlm_activation_date')) {
+                        $updates['mlm_activation_date'] = now();
+                    }
+                    $agent->update($updates);
+                }
+
+                // Trigger commission disbursement
+                app(CommissionService::class)->disburseForPayment($payment);
+
+                // Create payment notification
+                try {
+                    $notificationService = new \App\Services\NotificationService();
+                    $notificationService->createPaymentNotification(
+                        $agent->id,
+                        $payment->amount_cents / 100, // Convert cents to dollars
+                        'completed',
+                        'Curlec',
+                        $payment->id
+                    );
+                } catch (\Exception $e) {
+                    Log::error("Failed to create payment notification: " . $e->getMessage());
+                }
+
+                // Log the payment verification
+                Log::info('Payment verification completed via webhook', [
+                    'payment_id' => $payment->id,
+                    'agent_id' => $agent->id,
+                    'agent_code' => $agent->agent_code,
+                    'referrer_code' => $agent->referrer_code,
+                ]);
+            });
         } elseif ($status === 'failed') {
             $payment->status = 'failed';
             $payment->save();
+            
+            Log::info('Payment marked as failed via webhook', [
+                'payment_id' => $payment->id,
+                'order_id' => $orderId
+            ]);
         }
     }
 

@@ -113,7 +113,7 @@ class PaymentController extends Controller
     }
 
     // Webhook/callback verification
-    public function verify(Request $request, CurlecPaymentService $curlecService, CommissionService $commissionService)
+    public function verify(Request $request, CurlecPaymentService $curlecService)
     {
         $signature = $request->header('X-Curlec-Signature', '');
         $payload = $request->all();
@@ -125,60 +125,7 @@ class PaymentController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
         }
 
-        // Find payment by order ID
-        $orderId = $payload['order_id'] ?? null;
-        if ($orderId) {
-            $payment = PaymentTransaction::where('external_ref', $orderId)
-                ->orWhere('meta->order_id', $orderId)
-                ->first();
-
-            if ($payment) {
-                // Update payment status
-                $payment->status = 'paid';
-                $payment->paid_at = now();
-                $payment->save();
-
-                // Update the agent who made the payment to have an agent code if they don't have one
-                $agent = $payment->user;
-                if ($agent && empty($agent->agent_code)) {
-                    $seq = str_pad((string) (User::whereNotNull('agent_code')->count() + 1), 5, '0', STR_PAD_LEFT);
-                    $updates = ['agent_code' => 'KH'.$seq];
-                    if (\Schema::hasColumn('users', 'status')) {
-                        $updates['status'] = 'active';
-                    }
-                    if (\Schema::hasColumn('users', 'mlm_activation_date')) {
-                        $updates['mlm_activation_date'] = now();
-                    }
-                    $agent->update($updates);
-                }
-
-                // Calculate and disburse commissions
-                $commissionService->disburseForPayment($payment);
-
-                // Create payment notification
-                try {
-                    $notificationService = new NotificationService();
-                    $notificationService->createPaymentNotification(
-                        $agent->id,
-                        $payment->amount_cents / 100, // Convert cents to dollars
-                        'completed',
-                        'Curlec',
-                        $payment->id
-                    );
-                } catch (\Exception $e) {
-                    \Log::error("Failed to create payment notification: " . $e->getMessage());
-                }
-
-                // Log the payment verification
-                \Log::info('Payment verification completed via webhook', [
-                    'payment_id' => $payment->id,
-                    'agent_id' => $agent->id,
-                    'agent_code' => $agent->agent_code,
-                    'referrer_code' => $agent->referrer_code,
-                ]);
-            }
-        }
-
+        // Delegate all webhook processing to CurlecPaymentService to avoid duplication
         $curlecService->handleWebhook($payload);
 
         return response()->json(['status' => 'success']);
